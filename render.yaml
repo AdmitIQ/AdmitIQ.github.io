@@ -10,7 +10,13 @@ services:
       - key: TRUST_PROXY
         value: "true"
       - key: AI_PROVIDER
-        value: none
+        value: groq
+      - key: AI_API_KEY
+        sync: false
+      - key: SEARCH_PROVIDER
+        value: tavily
+      - key: SEARCH_API_KEY
+        sync: false
       - key: SCORECARD_API_KEY
         sync: false
       - key: SUPABASE_URL
