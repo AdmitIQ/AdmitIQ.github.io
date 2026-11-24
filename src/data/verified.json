@@ -1,0 +1,36 @@
+{
+ "harvard": {
+  "admit": {
+   "value": 0.0365,
+   "url": "https://collegescorecard.ed.gov/school/?166027",
+   "source": "College Scorecard (U.S. Dept. of Education)",
+   "retrieved": "2026-11-23"
+  },
+  "grad": {
+   "value": 0.9708,
+   "url": "https://collegescorecard.ed.gov/school/?166027",
+   "source": "College Scorecard (U.S. Dept. of Education)",
+   "retrieved": "2026-11-23"
+  },
+  "netPrice": {
+   "value": 19148,
+   "url": "https://collegescorecard.ed.gov/school/?166027",
+   "source": "College Scorecard (U.S. Dept. of Education)",
+   "retrieved": "2026-11-23"
+  }
+ },
+ "purdue": {
+  "admit": {
+   "value": 0.4987,
+   "url": "https://collegescorecard.ed.gov/school/?243780",
+   "source": "College Scorecard (U.S. Dept. of Education)",
+   "retrieved": "2026-11-23"
+  },
+  "grad": {
+   "value": 0.8403,
+   "url": "https://collegescorecard.ed.gov/school/?243780",
+   "source": "College Scorecard (U.S. Dept. of Education)",
+   "retrieved": "2026-11-23"
+  }
+ }
+}

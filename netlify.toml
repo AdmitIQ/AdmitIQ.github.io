@@ -1,0 +1,4 @@
+# Static deploy (local mode: all non-server features). For AI/research/sync, deploy the Node server instead.
+[build]
+  command = "npm install && npm run build"
+  publish = "dist"
