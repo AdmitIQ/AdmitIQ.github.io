@@ -9,6 +9,8 @@ import { assess, fit } from '../lib/analysis';
 import { distanceFromHome } from '../lib/geo';
 import { cycleDate, fmtDate, num, pct, prov, range, usd } from '../lib/format';
 import { Term } from '../components/term';
+import { Pennant } from '../components/art';
+import { WebReviewsCard } from '../components/national';
 
 function Row({ label, value, p }: { label: React.ReactNode; value: React.ReactNode; p?: ReturnType<typeof prov> }) {
   return (
@@ -56,8 +58,9 @@ export default function CollegePage({ id }: { id: string }) {
   return (
     <>
       <button onClick={() => history.length > 1 ? history.back() : navigate('colleges')} className="mb-4 inline-flex h-9 items-center gap-1.5 text-sm text-muted hover:text-ink"><LuArrowLeft /> Back</button>
+      <Pennant id={c.id} name={c.name} size={56} className="mb-3" />
       <PageHeader title={c.name}
-        desc={<span className="flex flex-wrap items-center gap-x-3 gap-y-1"><span className="inline-flex items-center gap-1"><LuMapPin />{c.city}, {c.state}{c.country !== 'USA' ? `, ${c.country}` : ''}</span>{dist !== null && isUS && <span>~{dist.toLocaleString()} mi from home (rough)</span>}<span>{c.kind} · {c.setting}</span></span>}
+        desc={<span className="flex flex-wrap items-center gap-x-3 gap-y-1"><span className="inline-flex items-center gap-1"><LuMapPin />{c.city}, {c.state}{c.country !== 'USA' ? `, ${c.country}` : ''}</span>{dist !== null && isUS && <span>~{dist.toLocaleString()} mi from home (rough)</span>}<span>{c.kind}{c.setting !== 'Unknown' ? ` · ${c.setting}` : ''}</span></span>}
         actions={<>
           <Button variant={item ? 'soft' : 'primary'} icon={item ? <LuCheck /> : <LuPlus />} onClick={addToList}>{item ? 'On my list' : 'Add to list'}</Button>
           <Button icon={<LuGitCompare />} variant={inCompare ? 'soft' : 'secondary'} onClick={() => store.set((st) => { st.compare = inCompare ? st.compare.filter((x) => x !== c.id) : [...st.compare, c.id].slice(0, 10); })}>{inCompare ? 'In compare' : 'Compare'}</Button>
@@ -69,7 +72,7 @@ export default function CollegePage({ id }: { id: string }) {
         {item && <button onClick={() => store.set((st) => { const l = st.list.find((x) => x.collegeId === c.id); if (l) l.favorite = !l.favorite; })} className={cx('inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-medium', item.favorite ? 'border-amber-400 bg-amber-400/15 text-amber-700 dark:text-amber-300' : 'border-line text-muted')}><LuStar className={item.favorite ? 'fill-current' : ''} />{item.favorite ? 'Favorite' : 'Mark favorite'}</button>}
       </div>
 
-      <Tabs value={tab} onChange={setTab} className="mb-5" tabs={[{ id: 'overview', label: 'Overview' }, { id: 'admissions', label: 'Admissions' }, { id: 'costs', label: 'Costs & aid' }, { id: 'outcomes', label: 'Outcomes' }, { id: 'analysis', label: 'Your analysis' }, { id: 'experiences', label: 'Student experiences', count: exps.length }]} />
+      <Tabs value={tab} onChange={setTab} className="mb-5" tabs={[{ id: 'overview', label: 'Overview' }, { id: 'admissions', label: 'Admissions' }, { id: 'costs', label: 'Costs & aid' }, { id: 'outcomes', label: 'Outcomes' }, { id: 'analysis', label: 'Your analysis' }, { id: 'experiences', label: 'What students say', count: exps.length || undefined }]} />
 
       <div key={tab} className="fade-up">
         {tab === 'overview' && (
@@ -205,11 +208,12 @@ export default function CollegePage({ id }: { id: string }) {
         )}
 
         {tab === 'experiences' && (
+          <div className="space-y-4"><WebReviewsCard name={c.name} />
           <Card className="p-5">
             {exps.length < 3 ? <EmptyState title="Not enough student experiences" body={`AdmitIQ has ${exps.length} anonymous submission${exps.length === 1 ? '' : 's'} for ${c.short} on this device — too few to summarize themes reliably (minimum 3).`} action={<Button onClick={() => navigate('community')}>Share or view experiences</Button>} /> : (
               <ul className="space-y-3">{exps.map((e) => <li key={e.id} className="rounded-xl border border-line p-4 text-sm"><div className="text-xs text-muted">{e.relation} · {e.year} · anonymous</div>{e.positives && <p className="mt-1 text-ink">+ {e.positives}</p>}{e.concerns && <p className="mt-1 text-muted">– {e.concerns}</p>}</li>)}</ul>
             )}
-          </Card>
+          </Card></div>
         )}
       </div>
 

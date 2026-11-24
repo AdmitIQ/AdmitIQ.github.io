@@ -3,6 +3,8 @@
 // (e.g. on a static host or inside a sandboxed preview).
 
 export interface ServerCaps {
+  directory?: { colleges: boolean; highSchools: boolean; stats: boolean } | null;
+  reviews?: boolean;
   ai: { provider: string; model: string; transcribe?: boolean } | null;
   research: { search: string | null; scorecard: boolean };
   supabase: { url: string; anonKey: string } | null;
@@ -54,6 +56,16 @@ export interface ResearchResult {
   conflicts: string[];
   uncertainty: string[];
 }
+export interface DirCollege { unitid: string; name: string; city: string; state: string; control: string; web: string; lat: number | null; lon: number | null; level: string }
+export interface HighSchool { id: string; name: string; city: string; state: string; charter: boolean; enrollment: number | null }
+export interface WebReviews { themes: { label: string; tone: 'positive' | 'mixed' | 'negative'; summary: string; sources: number[] }[]; summary: string | null; sources: { title: string; url: string; domain: string; snippet: string }[]; retrieved?: string; note: string }
+export const directory = {
+  searchColleges: (q: string, state = '') => post<{ results: DirCollege[]; total: number; year: string; source: string }>('/api/colleges/search', { q, state }),
+  collegeDetail: (unitid: string) => post<{ directory: DirCollege | null; stats: Record<string, number | number[] | string | null> | null; retrieved?: string; url?: string; note?: string }>('/api/colleges/detail', { unitid }),
+  highSchools: (state: string, q: string) => post<{ results: HighSchool[]; total: number; year: string; source: string }>('/api/highschools', { state, q }),
+  reviews: (name: string) => post<WebReviews>('/api/reviews', { name }),
+};
+
 export const research = {
   ask: (question: string, collegeIds: string[]) => post<ResearchResult>('/api/research', { question, collegeIds }),
   scorecard: (name: string) => post<{ results: Record<string, unknown>[]; retrieved: string; url: string }>('/api/scorecard', { name }),

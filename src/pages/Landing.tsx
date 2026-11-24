@@ -5,6 +5,7 @@ import { Badge, Button, Card, Ring, Select, cx } from '../components/ui';
 import { RangeChart, HBars } from '../components/charts';
 import { COLLEGES } from '../data/colleges';
 import { LANDING_SAMPLE, demoState } from '../data/demo';
+import { CampusScene, Pennant } from '../components/art';
 import { store } from '../lib/store';
 import { analyzeEssay } from '../lib/essay';
 import { pct, usd } from '../lib/format';
@@ -15,25 +16,24 @@ function HeroPreview() {
   const rows = ['gatech', 'umich', 'uiuc', 'purdue'].map((id) => COLLEGES.find((c) => c.id === id)!);
   return (
     <div className="relative">
-      <div className="absolute -inset-6 -z-10 rounded-[36px] bg-gradient-to-br from-[var(--accent)]/15 via-[var(--violet)]/10 to-[var(--teal)]/10 blur-2xl" />
-      <Card className="floaty overflow-hidden p-0 shadow-lift">
+      <Card className="overflow-hidden p-0 shadow-lift">
         <div className="flex items-center justify-between border-b border-line px-5 py-3">
           <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rose-400" /><span className="h-2.5 w-2.5 rounded-full bg-amber-400" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" /></div>
           <span className="text-xs text-muted">Example data · fictional student</span>
         </div>
-        <div className="grid gap-5 p-5 sm:grid-cols-[1fr_auto]">
+        <div className="grid gap-5 p-5">
           <div>
             <div className="text-sm font-semibold text-ink">SAT vs. middle 50% of admitted students</div>
             <div className="mt-1 mb-4 text-xs text-muted">Dashed line = your score (1480)</div>
             <RangeChart rows={rows.map((c) => ({ label: c.short, lo: c.sat?.[0] ?? null, hi: c.sat?.[1] ?? null }))} min={1100} max={1600} you={1480} youLabel="You" />
           </div>
-          <div className="flex gap-4 sm:flex-col">
+          <div className="flex flex-wrap gap-5">
             <div className="flex items-center gap-3"><Ring value={72} label="72%" tone="var(--teal)" /><div className="text-xs text-muted">Applications<br />complete</div></div>
-            <div className="flex items-center gap-3"><Ring value={68} label="6.8" tone="var(--violet)" /><div className="text-xs text-muted">Essay rubric<br />(heuristic)</div></div>
+            <div className="flex items-center gap-3"><Ring value={68} label="6.8" tone="var(--ink)" /><div className="text-xs text-muted">Essay rubric<br />(heuristic)</div></div>
           </div>
         </div>
         <div className="grid grid-cols-3 border-t border-line text-center text-sm">
-          {[['Reach', 4, 'text-violet'], ['Target', 5, 'text-accent'], ['Likely', 2, 'text-teal']].map(([l, n, c]) => (
+          {[['Reach', 4, 'text-[var(--c2)]'], ['Target', 5, 'text-[var(--c1)]'], ['Likely', 2, 'text-[var(--c3)]']].map(([l, n, c]) => (
             <div key={l as string} className="border-r border-line py-3 last:border-0"><div className={cx('text-xl font-semibold tabular-nums', c as string)}>{n}</div><div className="text-xs text-muted">{l}</div></div>
           ))}
         </div>
@@ -125,12 +125,11 @@ export default function Landing() {
         </div>
       </header>
 
-      <section className="hero-glow relative overflow-hidden">
-        <div className="grid-paper pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(to_bottom,black,transparent)]" />
-        <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 pt-14 pb-16 sm:px-6 md:pt-20 lg:grid-cols-[1.05fr_1fr] lg:pb-24">
+      <section className="relative overflow-hidden border-b border-line">
+        <div className="relative mx-auto grid max-w-[1240px] items-center gap-12 px-4 pt-14 pb-16 sm:px-6 md:pt-24 lg:grid-cols-[1.05fr_1fr] lg:pb-24">
           <div className="stagger">
-            <Badge tone="blue" className="mb-5"><LuSparkles /> Free, private, and works without an account</Badge>
-            <h1 className="text-balance text-[40px] font-semibold leading-[1.04] tracking-[-0.035em] text-ink sm:text-[54px]">Your college strategy, backed by data.</h1>
+            <p className="mb-6 inline-flex items-center gap-2 text-sm text-muted"><span className="h-1.5 w-1.5 rounded-full bg-[var(--c3)]" />Free · private · no account needed</p>
+            <h1 className="text-balance font-display text-[64px] font-black uppercase leading-[0.86] text-ink sm:text-[96px]">Your college strategy, <span className="relative inline-block">backed by data.<svg className="absolute -bottom-2 left-0 w-full" height="14" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden><path d="M3 9 Q80 2 150 8 T297 6" fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" /></svg></span></h1>
             <p className="mt-5 max-w-xl text-[17px] leading-relaxed text-muted">AdmitIQ turns your grades, scores, activities and budget into a clear plan: which colleges fit, where you stand, what each will really cost, and how to make your essays sound more like you.</p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button variant="primary" size="lg" onClick={() => navigate('onboarding')} icon={<LuArrowRight />}>Build my profile</Button>
@@ -138,16 +137,24 @@ export default function Landing() {
             </div>
             <p className="mt-4 flex items-center gap-2 text-sm text-muted"><LuLock className="shrink-0" /> Your data stays in your browser unless you choose to sync it.</p>
           </div>
-          <HeroPreview />
+          <div className="relative">
+            <CampusScene className="block w-full rounded-lg border-[1.5px] border-ink bg-surface" />
+            <div className="relative mt-6 sm:-mt-28 sm:ml-auto sm:mr-[-12px] sm:w-[74%] sm:rotate-[1.2deg]"><HeroPreview /></div>
+          </div>
         </div>
       </section>
 
-      <section id="features" className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6 sm:py-20">
-        <h2 className="max-w-2xl text-balance text-[32px] font-semibold leading-tight tracking-[-0.02em] text-ink">Everything a great counselor would track, in one place.</h2>
+      <div className="overflow-hidden border-b border-line bg-surface py-4" aria-label="Colleges in AdmitIQ">
+        <div className="marquee flex w-max items-center gap-8 whitespace-nowrap">{[...COLLEGES, ...COLLEGES].map((c, i) => <span key={i} className="flex items-center gap-2.5 font-display text-[20px] font-bold uppercase text-ink"><Pennant id={c.id} name={c.name} size={22} />{c.short}</span>)}</div>
+      </div>
+
+      <section id="features" className="mx-auto max-w-[1240px] px-4 py-16 sm:px-6 sm:py-24">
+        <p className="rv mb-3 text-sm font-medium text-muted">What's inside</p>
+        <h2 className="rv max-w-2xl text-balance text-[36px] font-semibold leading-[1.08] tracking-[-0.03em] text-ink sm:text-[44px]">Everything a great counselor would track, in one place.</h2>
         <div className="stagger mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {FEATURES.map((f) => (
             <Card key={f.title} hover className="p-6">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent"><f.icon className="text-lg" /></div>
+              <f.icon className="text-xl text-ink" />
               <h3 className="mt-4 text-[16px] font-semibold text-ink">{f.title}</h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-muted">{f.body}</p>
             </Card>

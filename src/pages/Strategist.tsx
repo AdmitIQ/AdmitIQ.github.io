@@ -72,7 +72,7 @@ export default function Strategist() {
           <div className="flex-1 space-y-5 overflow-y-auto p-5">
             {!msgs.length && (
               <div className="py-6 text-center">
-                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-[var(--accent)] via-[var(--violet)] to-[var(--teal)] text-white"><LuSparkles /></div>
+                <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-ink text-canvas"><LuSparkles /></div>
                 <h2 className="mt-3 font-semibold text-ink">What would you like to work on?</h2>
                 <div className="mx-auto mt-4 flex max-w-xl flex-wrap justify-center gap-2">{SUGGESTED.map((x) => <button key={x} onClick={() => ask(x)} className="min-h-9 rounded-full border border-line bg-surface px-3.5 py-1.5 text-sm text-ink transition-colors hover:border-accent/50 hover:bg-accent/5">{x}</button>)}</div>
               </div>
@@ -81,7 +81,7 @@ export default function Strategist() {
               <div key={i} className="flex justify-end gap-2"><div className="max-w-[85%] rounded-2xl rounded-tr-md bg-ink px-4 py-2.5 text-[15px] text-canvas">{m.text}</div><span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-raised text-muted"><LuUser /></span></div>
             ) : (
               <div key={i} className="flex gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--violet)] text-white"><LuSparkles className="text-sm" /></span>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-canvas"><LuSparkles className="text-sm" /></span>
                 <div className="min-w-0 flex-1 space-y-3">
                   {m.pending && <div className="flex items-center gap-2 text-sm text-muted"><span className="pulse-dot h-2 w-2 rounded-full bg-accent" />Asking {caps?.ai?.model}… (showing offline analysis meanwhile)</div>}
                   {m.llm && <div className="rounded-2xl border border-violet-500/25 bg-violet-500/[0.05] p-4"><Badge tone="violet" className="mb-2">AI interpretation · {caps?.ai?.model}</Badge><div className="whitespace-pre-wrap text-[15px] leading-relaxed text-ink">{m.llm}</div></div>}

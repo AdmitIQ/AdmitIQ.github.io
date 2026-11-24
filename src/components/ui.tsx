@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { BooksSpot } from './art';
 
 // Fixed-position layers render into <body> so animated (transformed) page containers can't trap them.
 export function Portal({ children }: { children: React.ReactNode }) {
@@ -16,22 +17,22 @@ export function prefersReducedMotion() {
 type BtnVariant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'soft';
 export function Button({ variant = 'secondary', size = 'md', className, children, icon, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: BtnVariant; size?: 'sm' | 'md' | 'lg'; icon?: React.ReactNode }) {
   const v = {
-    primary: 'bg-ink text-canvas hover:bg-ink/90 shadow-sm',
-    secondary: 'bg-surface text-ink border border-line hover:border-ink/25 hover:bg-raised shadow-xs',
+    primary: 'bg-accent text-white border-[1.5px] border-ink btn-press',
+    secondary: 'bg-surface text-ink border-[1.5px] border-ink/80 hover:bg-raised',
     ghost: 'text-muted hover:text-ink hover:bg-raised',
     danger: 'bg-rose-600 text-white hover:bg-rose-700',
-    soft: 'bg-accent/10 text-accent hover:bg-accent/15',
+    soft: 'bg-ivy/10 text-ivy dark:text-teal hover:bg-ivy/15',
   }[variant];
   const s = { sm: 'h-9 px-3 text-sm gap-1.5', md: 'h-11 px-4 text-[15px] gap-2', lg: 'h-12 px-6 text-base gap-2' }[size];
   return (
-    <button {...p} className={cx('btn inline-flex items-center justify-center rounded-xl font-medium whitespace-nowrap select-none transition-all duration-150 active:scale-[0.97] disabled:opacity-45 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent', v, s, className)}>
+    <button {...p} className={cx('btn inline-flex items-center justify-center rounded-md font-semibold whitespace-nowrap select-none transition-[transform,box-shadow,background-color] duration-100 disabled:opacity-45 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent', v, s, className)}>
       {icon && <span className="shrink-0 text-[1.05em]">{icon}</span>}{children}
     </button>
   );
 }
 
 export function Card({ className, children, hover, as: As = 'div', ...p }: React.HTMLAttributes<HTMLDivElement> & { hover?: boolean; as?: 'div' | 'section' | 'article' }) {
-  return <As {...p} className={cx('rounded-2xl border border-line bg-surface shadow-card', hover && 'transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lift hover:border-ink/15', className)}>{children}</As>;
+  return <As {...p} data-rv="" className={cx('rv rounded-lg border border-line bg-surface shadow-card', hover && 'transition-[border-color,box-shadow,translate] duration-150 hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-lift hover:border-ink', className)}>{children}</As>;
 }
 
 export function CardHeader({ title, desc, action, className, flush }: { title: React.ReactNode; desc?: React.ReactNode; action?: React.ReactNode; className?: string; flush?: boolean }) {
@@ -44,15 +45,17 @@ export function CardHeader({ title, desc, action, className, flush }: { title: R
 }
 
 const BADGE: Record<string, string> = {
-  neutral: 'bg-raised text-muted border-line', blue: 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20',
+  neutral: 'bg-raised text-muted border-line', blue: 'bg-[color-mix(in_srgb,var(--sky)_12%,transparent)] text-[var(--sky)] border-[var(--sky)]',
   violet: 'bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/20', teal: 'bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/20',
   amber: 'bg-amber-500/12 text-amber-800 dark:text-amber-300 border-amber-500/25', rose: 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20',
-  green: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+  green: 'bg-[color-mix(in_srgb,var(--teal)_10%,transparent)] text-[var(--teal)] border-[var(--teal)]',
+  orange: 'bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--accent)] border-[var(--accent)]',
 };
 export function Badge({ tone = 'neutral', children, className, title }: { tone?: keyof typeof BADGE | string; children: React.ReactNode; className?: string; title?: string }) {
-  return <span title={title} className={cx('inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium', BADGE[tone] || BADGE.neutral, className)}>{children}</span>;
+  const isStamp = ['Reach', 'Target', 'Likely', 'Accepted', 'Rejected', 'Waitlisted', 'Deferred', 'Submitted'].some((w) => typeof children === 'string' ? children === w || children.endsWith(` ${w}`) : false);
+  return <span title={title} className={cx('inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] border px-1.5 py-0.5 text-xs font-medium', isStamp && 'stamp text-[12px]', BADGE[tone] || BADGE.neutral, className)}>{children}</span>;
 }
-export const bucketTone = (b: string) => ({ Reach: 'violet', Target: 'blue', Likely: 'teal' } as Record<string, string>)[b] || 'neutral';
+export const bucketTone = (b: string) => ({ Reach: 'orange', Target: 'blue', Likely: 'green' } as Record<string, string>)[b] || 'neutral';
 export const compTone = (c: string) => ({ 'Highly competitive': 'rose', Competitive: 'amber', Possible: 'blue', 'Less competitive': 'teal', 'Open admission': 'green' } as Record<string, string>)[c] || 'neutral';
 export const statusTone = (s: string) => ({ Researching: 'neutral', Planned: 'neutral', 'In progress': 'blue', 'Ready to submit': 'violet', Submitted: 'teal', Accepted: 'green', Deferred: 'amber', Waitlisted: 'amber', Rejected: 'rose' } as Record<string, string>)[s] || 'neutral';
 
@@ -75,7 +78,7 @@ export function Field({ label, hint, error, children, className, htmlFor }: { la
     </div>
   );
 }
-const inputCls = 'w-full rounded-xl border border-line bg-surface px-3.5 text-[16px] text-ink placeholder:text-muted/70 transition-shadow focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15 disabled:opacity-60';
+const inputCls = 'w-full rounded-lg border border-line bg-surface px-3.5 text-[16px] text-ink placeholder:text-muted/70 transition-shadow focus:border-accent focus:outline-none focus:ring-4 focus:ring-accent/15 disabled:opacity-60';
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean }>(({ className, invalid, ...p }, ref) => (
   <input ref={ref} {...p} aria-invalid={invalid || undefined} className={cx(inputCls, 'h-11', invalid && 'border-rose-500 focus:ring-rose-500/15', className)} />
 ));
@@ -280,7 +283,7 @@ export function Ring({ value, size = 64, stroke = 7, label, tone = 'var(--accent
 export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNode; title: string; body: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center px-6 py-12 text-center">
-      {icon && <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-xl text-accent">{icon}</div>}
+      <div className="mb-4">{icon ? <div className="grid h-12 w-12 place-items-center rounded-md border-[1.5px] border-ink bg-mustard text-xl text-ink">{icon}</div> : <BooksSpot />}</div>
       <h3 className="text-base font-semibold text-ink">{title}</h3>
       <p className="mt-1 max-w-md text-sm text-muted">{body}</p>
       {action && <div className="mt-5">{action}</div>}
@@ -293,7 +296,7 @@ export function PageHeader({ title, desc, actions, eyebrow }: { title: string; d
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4 sm:mb-8">
       <div className="min-w-0 max-w-3xl">
         {eyebrow && <div className="mb-2 text-sm font-medium text-accent">{eyebrow}</div>}
-        <h1 className="text-balance text-[28px] font-semibold leading-[1.1] tracking-[-0.02em] text-ink sm:text-[34px]">{title}</h1>
+        <h1 className="text-balance text-[40px] font-extrabold leading-[0.95] text-ink sm:text-[54px]">{title}</h1>
         {desc && <p className="mt-2 text-[15px] leading-relaxed text-muted">{desc}</p>}
       </div>
       {actions && <div className="flex flex-wrap gap-2">{actions}</div>}
@@ -305,7 +308,7 @@ export function Stat({ label, value, sub, icon }: { label: string; value: React.
   return (
     <Card hover className="p-4 sm:p-5">
       <div className="flex items-center justify-between text-sm text-muted"><span>{label}</span>{icon && <span className="text-accent">{icon}</span>}</div>
-      <div className="mt-2 text-[26px] font-semibold leading-none tracking-tight text-ink tabular-nums">{value}</div>
+      <div className="font-display mt-2 text-[40px] font-extrabold leading-none text-ink tabular-nums">{value}</div>
       {sub && <div className="mt-2 text-xs text-muted">{sub}</div>}
     </Card>
   );

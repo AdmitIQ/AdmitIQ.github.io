@@ -8,6 +8,7 @@ import { METHODOLOGY, byTerm, rigor, ucCapped, unweighted, weighted } from '../l
 import { activityScore, compressDescription, descriptionTips, portfolio } from '../lib/activities';
 import { MAJORS } from '../data/colleges';
 import { REGIONS, STATES } from '../lib/geo';
+import { HighSchoolInput } from './national';
 
 const STATE_OPTS = [{ value: '', label: 'Select state' }, ...Object.entries(STATES).map(([k, v]) => ({ value: k, label: v.name })), { value: 'INTL', label: 'Outside the U.S.' }];
 const YEARS = [9, 10, 11, 12];
@@ -20,7 +21,7 @@ export function BasicsForm() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <Field label="Name or nickname" htmlFor="b-name" hint="Only shown to you."><Input id="b-name" value={p.name} onChange={(e) => set({ name: e.target.value })} maxLength={80} /></Field>
-      <Field label="High school" htmlFor="b-hs"><Input id="b-hs" value={p.highSchool} onChange={(e) => set({ highSchool: e.target.value })} maxLength={120} /></Field>
+      <Field label="High school" htmlFor="b-hs" hint={p.state ? 'Start typing to search public high schools in your state.' : 'Pick your state to search the national directory.'}><HighSchoolInput id="b-hs" value={p.highSchool} state={p.state} onChange={(v) => set({ highSchool: v })} onPick={(h) => set({ highSchool: h.name, city: h.city || p.city })} /></Field>
       <Field label="City" htmlFor="b-city"><Input id="b-city" value={p.city} onChange={(e) => set({ city: e.target.value })} /></Field>
       <Field label="State" htmlFor="b-state" hint="Used for in-state tuition and distance estimates."><Select id="b-state" value={p.state} onChange={(e) => set({ state: e.target.value })} options={STATE_OPTS} /></Field>
       <Field label="Graduation year" htmlFor="b-gy" error={errFor(p.gradYear !== null && (p.gradYear < 2024 || p.gradYear > 2035), 'Enter a year between 2024 and 2035')}><NumberInput id="b-gy" value={p.gradYear} onChange={(v) => set({ gradYear: v })} placeholder="2027" /></Field>

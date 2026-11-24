@@ -21,7 +21,7 @@ export default function ResetPassword() {
     try { await auth.updatePassword(caps.supabase, pw); setDone(true); } catch (x) { setErr((x as Error).message); } finally { setBusy(false); }
   }
   return (
-    <div className="hero-glow min-h-dvh">
+    <div className="min-h-dvh bg-canvas">
       <div className="mx-auto max-w-md px-4 py-8">
         <a href="#home"><Logo /></a>
         <Card className="fade-up mt-10 p-6 sm:p-8">

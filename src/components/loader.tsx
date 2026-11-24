@@ -25,7 +25,7 @@ export function ResearchLoader({ steps, title }: { steps: StepState[]; title: st
   return (
     <div aria-live="polite">
       <div className="flex items-center gap-3">
-        <div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--accent)] via-[var(--violet)] to-[var(--teal)]">
+        <div className="relative grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-ink">
           <span className="grid grid-cols-3 gap-0.5">{Array.from({ length: 9 }, (_, i) => <span key={i} className="pulse-dot h-1.5 w-1.5 rounded-full bg-white" style={{ animationDelay: `${(i % 3) * 120 + Math.floor(i / 3) * 80}ms` }} />)}</span>
         </div>
         <div><div className="font-semibold text-ink">{title}</div><div className="text-sm text-muted tabular-nums">{done} of {steps.length} steps complete</div></div>

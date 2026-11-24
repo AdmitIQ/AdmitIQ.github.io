@@ -150,6 +150,23 @@ Source priority used by the research pipeline: official admissions sites → Com
 
 ---
 
+### Every U.S. college and public high school
+
+When AdmitIQ runs with its server (any deploy below), it reads two free federal datasets through the
+[Urban Institute Education Data Portal](https://educationdata.urban.org/) (ODC-By licence, no key needed):
+
+- **NCES IPEDS directory**: every degree-granting U.S. college (about 6,000). Search it on the College search page and add any school to your list. With a free `SCORECARD_API_KEY`, official admissions, cost and outcome figures load from College Scorecard; without one, AdmitIQ shows only the directory facts and says so.
+- **NCES Common Core of Data**: every U.S. public high school, used for the high-school autocomplete in your profile. Private schools can be typed freely.
+
+Endpoints: `POST /api/colleges/search {q, state}`, `/api/colleges/detail {unitid}`, `/api/highschools {state, q}`.
+Settings: `URBAN_BASE` (override the API base), `DIRECTORY_YEARS` (default `2023,2022,2021`, tried newest first).
+
+### What students say online
+
+`POST /api/reviews {name}` runs three web searches (needs `SEARCH_PROVIDER` + `SEARCH_API_KEY`, Tavily or Brave free tiers),
+then, if AI is configured, groups the snippets into cited themes. Every theme links its sources; usernames are not shown;
+results are labelled as anecdotes and cached for 7 days. AdmitIQ uses search APIs and never scrapes review sites.
+
 ## External services (all optional) and what they cost
 
 | Service | Enables | Cost |

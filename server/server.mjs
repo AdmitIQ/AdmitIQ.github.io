@@ -138,7 +138,7 @@ const SC_FIELDS = {
 async function scorecard(params) {
   if (!env.SCORECARD_API_KEY) throw httpError(503, 'College Scorecard is not configured (set SCORECARD_API_KEY — free at api.data.gov/signup).');
   const q = new URLSearchParams({ api_key: env.SCORECARD_API_KEY, fields: Object.values(SC_FIELDS).join(','), per_page: '5', ...params });
-  const url = `https://api.data.gov/ed/collegescorecard/v1/schools?${q}`;
+  const url = `${env.SCORECARD_BASE || 'https://api.data.gov/ed/collegescorecard/v1/schools'}?${q}`;
   const r = await fetch(url, { signal: AbortSignal.timeout(20_000), headers: { 'user-agent': UA } });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw httpError(502, `College Scorecard error ${r.status}: ${d?.error?.message || ''}`);
@@ -146,12 +146,101 @@ async function scorecard(params) {
   return { results, retrieved: new Date().toISOString().slice(0, 10), url: url.replace(env.SCORECARD_API_KEY, 'API_KEY') };
 }
 
+// ---------------- National directories (Urban Institute Education Data Portal, free, no key) ----------------
+// Data: NCES IPEDS (colleges) and Common Core of Data (public schools), ODC-By licensed via educationdata.urban.org.
+const URBAN = env.URBAN_BASE || 'https://educationdata.urban.org/api/v1';
+const YEARS = (env.DIRECTORY_YEARS || '2023,2022,2021').split(',').map((y) => y.trim());
+const FIPS = { AL: 1, AK: 2, AZ: 4, AR: 5, CA: 6, CO: 8, CT: 9, DE: 10, DC: 11, FL: 12, GA: 13, HI: 15, ID: 16, IL: 17, IN: 18, IA: 19, KS: 20, KY: 21, LA: 22, ME: 23, MD: 24, MA: 25, MI: 26, MN: 27, MS: 28, MO: 29, MT: 30, NE: 31, NV: 32, NH: 33, NJ: 34, NM: 35, NY: 36, NC: 37, ND: 38, OH: 39, OK: 40, OR: 41, PA: 42, RI: 44, SC: 45, SD: 46, TN: 47, TX: 48, UT: 49, VT: 50, VA: 51, WA: 53, WV: 54, WI: 55, WY: 56, PR: 72 };
+const dirCache = new Map();
+async function urbanAll(pathTpl, maxPages = 12) {
+  let lastErr = '';
+  for (const year of YEARS) {
+    let url = `${URBAN}/${pathTpl.replace('{year}', year)}`, rows = [], pages = 0;
+    try {
+      while (url && pages < maxPages) {
+        const r = await fetch(url, { signal: AbortSignal.timeout(30_000), headers: { 'user-agent': UA, accept: 'application/json' } });
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const d = await r.json();
+        rows = rows.concat(d.results || []); url = d.next; pages++;
+      }
+      if (rows.length) return { rows, year };
+    } catch (e) { lastErr = e.message; }
+  }
+  throw httpError(502, `National directory unavailable (${lastErr || 'no data'}). Try again later.`);
+}
+const CONTROL = { 1: 'Public', 2: 'Private nonprofit', 3: 'Private for-profit' };
+async function collegeDirectory() {
+  if (dirCache.has('colleges')) return dirCache.get('colleges');
+  const p = urbanAll('college-university/ipeds/directory/{year}/', 20).then(({ rows, year }) => ({ year, rows: rows
+    .filter((r) => r.unitid && r.inst_name && (r.degree_granting === undefined || r.degree_granting === 1))
+    .map((r) => ({ unitid: String(r.unitid), name: r.inst_name, city: r.city || '', state: r.state_abbr || '', control: CONTROL[r.inst_control] || 'Unknown',
+      web: r.url_school ? (/^https?:/.test(r.url_school) ? r.url_school : `https://${r.url_school}`) : '', lat: r.latitude ?? null, lon: r.longitude ?? null,
+      level: r.inst_level === 1 ? 'Four-year' : r.inst_level === 2 ? 'Two-year' : r.inst_level === 3 ? 'Less than two-year' : '' })) }));
+  dirCache.set('colleges', p);
+  p.catch(() => dirCache.delete('colleges'));
+  return p;
+}
+async function highSchools(state) {
+  const fips = FIPS[state]; if (!fips) throw httpError(400, 'Unknown state');
+  const key = `hs-${state}`;
+  if (dirCache.has(key)) return dirCache.get(key);
+  const p = urbanAll(`schools/ccd/directory/{year}/?fips=${fips}&school_level=3`, 10).then(({ rows, year }) => ({ year, rows: rows
+    .filter((r) => r.school_name)
+    .map((r) => ({ id: String(r.ncessch || ''), name: r.school_name, city: r.city_location || r.city_mailing || '', state, charter: r.charter === 1, enrollment: r.enrollment ?? null })) }));
+  dirCache.set(key, p);
+  p.catch(() => dirCache.delete(key));
+  return p;
+}
+const norm = (x) => String(x || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function rank(items, q, field = 'name') {
+  const n = norm(q); if (!n) return items;
+  const words = n.split(' ');
+  return items.map((it) => { const h = norm(it[field]); const all = words.every((w) => h.includes(w)); const score = h === n ? 0 : h.startsWith(n) ? 1 : h.includes(n) ? 2 : all ? 3 : 9; return { it, score }; })
+    .filter((x) => x.score < 9).sort((a, b) => a.score - b.score || a.it[field].length - b.it[field].length).map((x) => x.it);
+}
+
+// College details: College Scorecard (official, needs free key) for statistics; directory-only otherwise.
+async function collegeDetail(unitid) {
+  const dir = await collegeDirectory().catch(() => null);
+  const base = dir?.rows.find((r) => r.unitid === unitid) || null;
+  if (!env.SCORECARD_API_KEY) return { directory: base, stats: null, note: 'Add a free SCORECARD_API_KEY to load official admissions, cost and outcome statistics.' };
+  const sc = await scorecard({ id: unitid });
+  return { directory: base, stats: sc.results[0] || null, retrieved: sc.retrieved, url: `https://collegescorecard.ed.gov/school/?${unitid}` };
+}
+
+// ---------------- Student reviews from the web (search API + cited summary; no scraping) ----------------
+const reviewCache = new Map();
+async function webReviews(name) {
+  if (!env.SEARCH_API_KEY) throw httpError(503, 'Review summaries need a search API key (SEARCH_PROVIDER=tavily or brave).');
+  const key = norm(name);
+  const hit = reviewCache.get(key); if (hit && Date.now() - hit.at < 7 * 864e5) return hit.data;
+  const queries = [`${name} student reviews campus life`, `${name} reddit what is it like to attend`, `${name} students say academics workload social life`];
+  const seen = new Set(); const sources = [];
+  for (const q of queries) {
+    const res = await webSearch(q).catch(() => []);
+    for (const r of res || []) { if (seen.has(r.url) || /\.pdf$/i.test(r.url)) continue; seen.add(r.url); sources.push({ title: r.title, url: r.url, domain: new URL(r.url).host.replace(/^www\./, ''), snippet: (r.snippet || '').slice(0, 600) }); }
+  }
+  if (!sources.length) return { themes: [], sources: [], summary: null, note: 'No public reviews were found.' };
+  let themes = [], summary = null;
+  if (aiConfig()) {
+    const ctx = sources.slice(0, 14).map((s, i) => `[${i + 1}] ${s.domain} — ${s.title}\n${s.snippet}`).join('\n\n');
+    const raw = await callAI([
+      { role: 'system', content: 'You summarize what students say about a college, using ONLY the numbered search snippets. These are anecdotes, not facts. Return JSON: {"summary": string (2 sentences, hedged: "Reviewers often say…"), "themes": [{"label": string, "tone": "positive"|"mixed"|"negative", "summary": string (1 sentence), "sources": [numbers]}]}. 4–7 themes covering academics, social life, housing/food, career, cost, campus culture where present. Cite every theme. Never invent details, names or statistics.' },
+      { role: 'user', content: `College: ${name}\n\nSnippets:\n${ctx}` },
+    ], { json: true, maxTokens: 900 }).catch(() => '');
+    try { const j = JSON.parse(raw.replace(/^```json\s*|```$/g, '')); themes = (j.themes || []).filter((t) => Array.isArray(t.sources) && t.sources.length); summary = j.summary || null; } catch { /* fall back to raw sources */ }
+  }
+  const data = { themes, summary, sources: sources.slice(0, 14), retrieved: new Date().toISOString().slice(0, 10), note: 'Anecdotal opinions from public web pages — not verified facts. Read the sources.' };
+  reviewCache.set(key, { at: Date.now(), data });
+  return data;
+}
+
 // ---------------- Web search (optional, bring your own key) ----------------
 const OFFICIAL = /\.(edu|gov)(\/|$)|collegescorecard\.ed\.gov|nces\.ed\.gov|studentaid\.gov/i;
 async function webSearch(query) {
   const provider = (env.SEARCH_PROVIDER || '').toLowerCase();
   if (provider === 'tavily' && env.SEARCH_API_KEY) {
-    const r = await fetch('https://api.tavily.com/search', { method: 'POST', signal: AbortSignal.timeout(20_000), headers: { 'content-type': 'application/json', authorization: `Bearer ${env.SEARCH_API_KEY}` }, body: JSON.stringify({ query, max_results: 6, search_depth: 'basic' }) });
+    const r = await fetch(`${env.TAVILY_BASE || 'https://api.tavily.com'}/search`, { method: 'POST', signal: AbortSignal.timeout(20_000), headers: { 'content-type': 'application/json', authorization: `Bearer ${env.SEARCH_API_KEY}` }, body: JSON.stringify({ query, max_results: 6, search_depth: 'basic' }) });
     const d = await r.json().catch(() => ({}));
     if (!r.ok) throw httpError(502, `Search error ${r.status}`);
     return (d.results || []).map((x) => ({ title: x.title, url: x.url, snippet: x.content || '' }));
@@ -303,7 +392,7 @@ const server = http.createServer(async (req, res) => {
   try {
     if (url.pathname === '/api/health') {
       const ai = aiConfig();
-      return json(res, 200, { ai: ai ? { provider: ai.name, model: ai.model, transcribe: !!transcribeConfig() } : null, research: { search: env.SEARCH_PROVIDER && env.SEARCH_API_KEY ? env.SEARCH_PROVIDER : null, scorecard: !!env.SCORECARD_API_KEY }, supabase: env.SUPABASE_URL && env.SUPABASE_ANON_KEY ? { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY } : null });
+      return json(res, 200, { directory: env.DISABLE_DIRECTORY === 'true' ? null : { colleges: true, highSchools: true, stats: !!env.SCORECARD_API_KEY }, reviews: !!(env.SEARCH_PROVIDER && env.SEARCH_API_KEY), ai: ai ? { provider: ai.name, model: ai.model, transcribe: !!transcribeConfig() } : null, research: { search: env.SEARCH_PROVIDER && env.SEARCH_API_KEY ? env.SEARCH_PROVIDER : null, scorecard: !!env.SCORECARD_API_KEY }, supabase: env.SUPABASE_URL && env.SUPABASE_ANON_KEY ? { url: env.SUPABASE_URL, anonKey: env.SUPABASE_ANON_KEY } : null });
     }
     if (url.pathname.startsWith('/api/')) {
       if (req.method !== 'POST') throw httpError(405, 'Use POST');
@@ -322,6 +411,30 @@ const server = http.createServer(async (req, res) => {
         if (!Array.isArray(body.messages) || !body.messages.length || body.messages.length > 20) throw httpError(400, 'messages must be a non-empty array (max 20)');
         const msgs = body.messages.map((m) => ({ role: ['system', 'user', 'assistant'].includes(m.role) ? m.role : 'user', content: String(m.content || '').slice(0, 24000) }));
         return json(res, 200, { text: await callAI(msgs, { json: !!body.json }) });
+      }
+      if (url.pathname === '/api/colleges/search') {
+        rateLimit(ip, 0.5);
+        const d = await collegeDirectory();
+        let rows = d.rows;
+        if (body.state) rows = rows.filter((r) => r.state === String(body.state).toUpperCase());
+        if (body.level) rows = rows.filter((r) => r.level === body.level);
+        const results = rank(rows, String(body.q || '').slice(0, 80)).slice(0, 25);
+        return json(res, 200, { results, total: d.rows.length, year: d.year, source: 'NCES IPEDS via Urban Institute Education Data Portal' });
+      }
+      if (url.pathname === '/api/colleges/detail') {
+        rateLimit(ip);
+        if (!/^\d{6}$/.test(String(body.unitid || ''))) throw httpError(400, 'unitid must be a 6-digit IPEDS id');
+        return json(res, 200, await collegeDetail(String(body.unitid)));
+      }
+      if (url.pathname === '/api/highschools') {
+        rateLimit(ip, 0.5);
+        const d = await highSchools(String(body.state || '').toUpperCase());
+        return json(res, 200, { results: rank(d.rows, String(body.q || '').slice(0, 80)).slice(0, 15), total: d.rows.length, year: d.year, source: 'NCES Common Core of Data via Urban Institute Education Data Portal' });
+      }
+      if (url.pathname === '/api/reviews') {
+        rateLimit(ip, 4);
+        if (!body.name || String(body.name).length > 140) throw httpError(400, 'name is required');
+        return json(res, 200, await webReviews(String(body.name)));
       }
       if (url.pathname === '/api/scorecard') {
         rateLimit(ip);

@@ -8,6 +8,8 @@ import { assess } from '../lib/analysis';
 import { distanceFromHome } from '../lib/geo';
 import { STATES } from '../lib/geo';
 import { pct, range, usd } from '../lib/format';
+import { Pennant } from '../components/art';
+import { NationalCollegeSearch } from '../components/national';
 
 export interface Filters {
   q: string; states: string[]; countries: string[]; kinds: string[]; settings: string[]; major: string; tests: string[];
@@ -142,13 +144,14 @@ export function CollegeCard({ c, compact }: { c: College; compact?: boolean }) {
   return (
     <Card hover className="flex flex-col p-5">
       <div className="flex items-start justify-between gap-3">
-        <a href={`#college-${c.id}`} className="min-w-0 group">
-          <h3 className="font-semibold leading-snug text-ink group-hover:text-accent">{c.name}</h3>
-          <p className="mt-0.5 flex items-center gap-1 text-sm text-muted"><LuMapPin className="shrink-0" />{c.city}, {c.state}{c.country !== 'USA' ? ` · ${c.country}` : ''}{d !== null && c.country === 'USA' ? ` · ~${d.toLocaleString()} mi` : ''}</p>
+        <a href={`#college-${c.id}`} className="group flex min-w-0 items-start gap-3">
+          <Pennant id={c.id} name={c.name} size={30} className="mt-0.5 shrink-0 transition-transform group-hover:-rotate-6" />
+          <span className="min-w-0"><h3 className="font-semibold leading-snug text-ink group-hover:text-accent">{c.name}</h3>
+          <p className="mt-0.5 flex items-center gap-1 text-sm text-muted"><LuMapPin className="shrink-0" />{c.city}, {c.state}{c.country !== 'USA' ? ` · ${c.country}` : ''}{d !== null && c.country === 'USA' ? ` · ~${d.toLocaleString()} mi` : ''}</p></span>
         </a>
         <Badge tone={bucketTone(a.bucket)} title="AdmitIQ estimate, not a guarantee">{a.bucket}</Badge>
       </div>
-      <div className="mt-3 flex flex-wrap gap-1.5"><Badge>{c.kind}</Badge><Badge>{c.setting}</Badge><Badge>{c.tests === 'Test-free' ? 'Test-free' : `Tests ${c.tests.toLowerCase()}`}</Badge></div>
+      <div className="mt-3 flex flex-wrap gap-1.5"><Badge>{c.kind}</Badge>{c.setting !== 'Unknown' && <Badge>{c.setting}</Badge>}<Badge>{c.tests === 'Test-free' ? 'Test-free' : `Tests ${c.tests.toLowerCase()}`}</Badge></div>
       {!compact && (
         <dl className="mt-4 grid grid-cols-3 gap-3 text-sm">
           <div><dt className="text-xs text-muted">Admit rate</dt><dd className="font-semibold tabular-nums text-ink">{c.kind === 'Community college' ? 'Open' : pct(c.admit)}</dd></div>
@@ -187,6 +190,7 @@ export default function Colleges() {
   return (
     <>
       <PageHeader title="College search" desc={`${COLLEGES.length} institutions — public, private, liberal arts, community colleges and international universities. Every figure links to its source.`} />
+      <NationalCollegeSearch />
       <div className="sticky top-14 z-30 -mx-4 mb-5 bg-canvas/85 px-4 py-3 backdrop-blur lg:top-0 lg:mx-0 lg:px-0">
         <div className="flex flex-wrap gap-2">
           <div className="relative min-w-[220px] flex-1">

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   LuLayoutDashboard, LuSearch, LuGitCompare, LuListChecks, LuTarget, LuFileText, LuCalculator, LuAward, LuCalendarDays,
   LuFlaskConical, LuSettings, LuDatabase, LuUser, LuMessageSquare, LuUsers, LuMenu, LuX, LuGraduationCap, LuEllipsis, LuMic, LuBookOpen, LuSearch as LuSearchIcon,
@@ -11,6 +12,7 @@ import { store, useStore } from './lib/store';
 import { auth, serverCaps, type ServerCaps } from './lib/services';
 import { reconcile, startAutoSync, syncStatus } from './lib/sync';
 import { startReminders } from './lib/reminders';
+import { registerColleges } from './data/colleges';
 import ResetPassword from './pages/ResetPassword';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -50,7 +52,17 @@ export function navigate(route: string) {
 }
 export function useRoute() {
   const [r, setR] = useState(parse());
-  useEffect(() => { const h = () => { setR(parse()); window.scrollTo({ top: 0 }); }; window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h); }, []);
+  useEffect(() => {
+    const h = () => {
+      const next = parse();
+      const doc = document as Document & { startViewTransition?: (cb: () => void) => unknown };
+      const reduce = document.documentElement.dataset.motion === 'reduce' || matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // Smooth cross-fade between pages where the browser supports View Transitions.
+      if (doc.startViewTransition && !reduce) doc.startViewTransition(() => { flushSync(() => setR(next)); window.scrollTo({ top: 0 }); });
+      else { setR(next); window.scrollTo({ top: 0 }); }
+    };
+    window.addEventListener('hashchange', h); return () => window.removeEventListener('hashchange', h);
+  }, []);
   return r;
 }
 export function Link({ to, className, children, ...p }: { to: string; className?: string; children: React.ReactNode } & React.AnchorHTMLAttributes<HTMLAnchorElement>) {
@@ -117,8 +129,8 @@ function NotFound() {
 export function Logo({ className }: { className?: string }) {
   return (
     <span className={cx('inline-flex items-center gap-2 font-semibold tracking-tight text-ink', className)}>
-      <span className="grid h-8 w-8 place-items-center rounded-[10px] bg-gradient-to-br from-[var(--accent)] via-[var(--violet)] to-[var(--teal)] text-white shadow-sm"><LuGraduationCap className="text-[17px]" /></span>
-      AdmitIQ
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden><rect x="2" y="2" width="2.4" height="26" rx="1" fill="currentColor" /><path d="M4.4 4 L28 11.5 L4.4 19 Z" fill="var(--accent)" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" /></svg>
+      <span className="font-display text-[24px] font-extrabold uppercase leading-none tracking-wide">AdmitIQ</span>
     </span>
   );
 }
@@ -181,7 +193,7 @@ function AppShell({ route }: { route: string }) {
   const base = route.startsWith('college-') ? 'colleges' : route;
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[264px_minmax(0,1fr)]">
-      <aside className="sticky top-0 hidden h-dvh border-r border-line bg-canvas lg:block"><Sidebar route={route} /></aside>
+      <aside className="ivy-side sticky top-0 hidden h-dvh bg-ivy text-ivy-ink lg:block"><Sidebar route={route} /></aside>
       {/* Mobile top bar */}
       <header className="glass sticky top-0 z-40 flex h-14 items-center justify-between border-b border-line px-4 lg:hidden">
         <a href="#dashboard"><Logo /></a>
@@ -200,7 +212,7 @@ function AppShell({ route }: { route: string }) {
       )}
       <main id="main" className="min-w-0 pb-[calc(88px+env(safe-area-inset-bottom))] lg:pb-12">
         {demo && <div className="border-b border-line bg-violet-500/[0.07] px-4 py-2 text-center text-xs text-ink sm:text-sm">You're exploring a fictional <b>demo student</b>. Nothing here is a real person or a real admissions result. <a href="#data" className="font-medium text-accent underline-offset-2 hover:underline">Clear demo data</a></div>}
-        <div key={route} className="fade-up mx-auto w-full max-w-[1240px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10"><Page route={route} /></div>
+        <div key={route} className={cx(!('startViewTransition' in document) && 'fade-up', 'mx-auto w-full max-w-[1240px] px-4 pt-6 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10')}><Page route={route} /></div>
       </main>
       {/* Mobile bottom tab bar */}
       <nav aria-label="Quick" className="glass fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line pb-[env(safe-area-inset-bottom)] lg:hidden">
@@ -217,6 +229,19 @@ function AppShell({ route }: { route: string }) {
   );
 }
 
+// Reveal cards and sections as they scroll into view, staggered within each batch.
+function startReveal() {
+  if (typeof IntersectionObserver === 'undefined') { document.querySelectorAll('.rv').forEach((e) => e.classList.add('in')); return () => {}; }
+  const io = new IntersectionObserver((entries) => {
+    let k = 0;
+    for (const e of entries) if (e.isIntersecting) { const el = e.target as HTMLElement; el.style.setProperty('--rv-d', `${Math.min(6, k++) * 55}ms`); el.classList.add('in'); io.unobserve(el); }
+  }, { rootMargin: '0px 0px -6% 0px', threshold: 0.04 });
+  const scan = () => document.querySelectorAll('.rv:not(.in):not([data-rv-seen])').forEach((el) => { el.setAttribute('data-rv-seen', ''); io.observe(el); });
+  scan();
+  const mo = new MutationObserver(scan); mo.observe(document.body, { childList: true, subtree: true });
+  return () => { io.disconnect(); mo.disconnect(); };
+}
+
 export default function App() {
   const route = useRoute();
   useTheme();
@@ -231,7 +256,9 @@ export default function App() {
     return startAutoSync(cfg);
   }, [caps.caps]);
   useEffect(() => startReminders(), []);
+  useEffect(() => startReveal(), []);
   const onboarded = useStore((s) => s.meta.onboarded);
+  registerColleges(useStore((s) => s.customColleges)); // colleges added from the national directory
   useEffect(() => { document.title = route === 'home' ? 'AdmitIQ — Your college strategy, backed by data' : `${route.replace(/^college-/, '').replace(/-/g, ' ').replace(/^\w/, (m) => m.toUpperCase())} · AdmitIQ`; }, [route]);
   void store; void onboarded;
   let content: React.ReactNode;

@@ -25,7 +25,7 @@ export function emptyState(): AppState {
       aidPriority: 'Somewhat important', meritPreference: false, loanWillingness: 'Federal loans only', notes: '',
     },
     courses: [], activities: [], list: [], customCategories: [], compare: [], apps: [], tasks: [], essays: [],
-    savedSearches: [], savedScholarships: [], customScholarships: [], experiences: [], interviews: [], offers: [],
+    savedSearches: [], savedScholarships: [], customScholarships: [], experiences: [], interviews: [], offers: [], customColleges: [],
     prefs: { theme: 'system', reduceMotion: false, essayMode: 'Deep critique', autoSync: true, notifications: false },
   };
 }

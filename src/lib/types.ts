@@ -145,6 +145,7 @@ export interface AppState {
   customScholarships: CustomScholarship[];
   experiences: Experience[];
   interviews: InterviewSession[];
+  customColleges: import('../data/colleges').College[];
   offers: AidOffer[];
   prefs: { theme: 'system' | 'light' | 'dark'; reduceMotion: boolean; essayMode: string; autoSync: boolean; notifications: boolean };
 }

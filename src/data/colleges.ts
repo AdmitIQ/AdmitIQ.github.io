@@ -9,7 +9,7 @@
 // the US figures with verified College Scorecard values stamped with retrieval dates.
 
 export type Kind = 'Public' | 'Private' | 'Liberal arts' | 'Community college' | 'International';
-export type Setting = 'Urban' | 'Suburban' | 'Small city' | 'Rural';
+export type Setting = 'Urban' | 'Suburban' | 'Small city' | 'Rural' | 'Unknown';
 export type TestPolicy = 'Required' | 'Optional' | 'Test-free' | 'Varies by program';
 
 export interface College {
@@ -115,6 +115,11 @@ export const COLLEGES: (College & { verified?: Record<string, VerifiedField> })[
   for (const [k, f] of Object.entries(v)) (patch as Record<string, unknown>)[k] = f.value;
   return { ...c, ...patch, verified: v };
 });
+
+/** Adds colleges loaded from the national directory at runtime (kept in the student's saved state). */
+export function registerColleges(list: (College & { verified?: Record<string, VerifiedField> })[]) {
+  for (const c of list) if (!COLLEGES.some((x) => x.id === c.id)) COLLEGES.push(c);
+}
 
 export const DATA_META = {
   label: 'Unverified (model recall)',

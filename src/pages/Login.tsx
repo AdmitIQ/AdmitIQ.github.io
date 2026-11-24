@@ -37,7 +37,7 @@ export default function Login() {
   }
 
   return (
-    <div className="hero-glow min-h-dvh">
+    <div className="min-h-dvh bg-canvas">
       <div className="mx-auto flex max-w-md flex-col px-4 py-8">
         <div className="flex items-center justify-between"><a href="#home"><Logo /></a><a href="#home" className="inline-flex h-10 items-center gap-1.5 text-sm text-muted hover:text-ink"><LuArrowLeft /> Back</a></div>
         <Card className="fade-up mt-10 p-6 sm:p-8">

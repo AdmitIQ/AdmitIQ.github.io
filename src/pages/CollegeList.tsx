@@ -7,6 +7,7 @@ import { COLLEGES } from '../data/colleges';
 import { store, useStore } from '../lib/store';
 import { assess, recommendList } from '../lib/analysis';
 import { byId, cycleDate, fmtDate, pct, toCSV, usd } from '../lib/format';
+import { Pennant } from '../components/art';
 
 const BASE = ['Reach', 'Target', 'Likely'];
 
@@ -73,7 +74,7 @@ export default function CollegeList() {
                         <li key={l.collegeId}>
                           <Card hover className="p-4">
                             <div className="flex items-start justify-between gap-2">
-                              <a href={`#college-${c.id}`} className="min-w-0 font-semibold leading-snug text-ink hover:text-accent">{c.short}</a>
+                              <a href={`#college-${c.id}`} className="flex min-w-0 items-center gap-2 font-semibold leading-snug text-ink hover:text-accent"><Pennant id={c.id} name={c.name} size={22} className="shrink-0" />{c.short}</a>
                               <div className="flex shrink-0">
                                 <button aria-label={l.favorite ? 'Unfavorite' : 'Favorite'} aria-pressed={l.favorite} onClick={() => store.set((st) => { const x = st.list.find((y) => y.collegeId === c.id); if (x) x.favorite = !x.favorite; })} className={cx('grid h-8 w-8 place-items-center rounded-lg hover:bg-raised', l.favorite ? 'text-amber-500' : 'text-muted')}><LuStar className={l.favorite ? 'fill-current' : ''} /></button>
                                 <button aria-label={`Remove ${c.short}`} onClick={async () => { if (await confirm({ title: `Remove ${c.short}?`, body: 'Notes for this college will be deleted. Tracker entries are kept.', action: 'Remove', danger: true })) store.set((st) => { st.list = st.list.filter((y) => y.collegeId !== c.id); }); }} className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-raised hover:text-rose-600"><LuTrash2 /></button>

@@ -122,7 +122,7 @@ export default function Interview() {
           <div className="h-1.5 overflow-hidden rounded-full bg-raised"><div className="h-full rounded-full bg-accent transition-[width] duration-500" style={{ width: `${((i + (phase === 'review' ? 1 : 0)) / qs.length) * 100}%` }} /></div>
           <Card className="p-6 sm:p-8">
             <div className="flex items-start gap-4">
-              <span className={cx('grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--violet)] text-white', speaking && 'mic-ring')} style={{ ['--lvl' as string]: 0.4 }}><LuVolume2 /></span>
+              <span className={cx('grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-canvas', speaking && 'mic-ring')} style={{ ['--lvl' as string]: 0.4 }}><LuVolume2 /></span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-balance text-[22px] font-semibold leading-snug tracking-tight text-ink sm:text-[26px]">{q.text(college)}</h2>
                 <p className="mt-2 text-sm text-muted">Tip: {q.tip}</p>

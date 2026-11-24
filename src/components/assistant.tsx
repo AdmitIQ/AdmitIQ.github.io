@@ -109,7 +109,7 @@ export function Assistant() {
             <div className="space-y-3 px-4 py-4" aria-live="polite">
               {heard && <p className="text-xs text-muted">You said: “{heard}”</p>}
               <div className="flex items-start gap-3">
-                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[var(--accent)] to-[var(--violet)] text-white"><LuSparkles className="text-sm" /></span>
+                <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-canvas"><LuSparkles className="text-sm" /></span>
                 <div className="min-w-0 flex-1"><div className="font-semibold text-ink">{result.title}</div>{result.say && <p className="mt-1 text-[15px] leading-relaxed text-ink/90">{result.say}</p>}</div>
                 {result.say && <button onClick={() => (speaking ? stopSpeaking() : speak(result.say))} aria-label={speaking ? 'Stop' : 'Read aloud'} className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-raised hover:text-accent">{speaking ? <LuSquare className="fill-current text-[0.8em]" /> : <LuVolume2 />}</button>}
               </div>
@@ -144,7 +144,7 @@ export function VoiceFab() {
   return (
     <Portal>
       <button onClick={() => openAssistant(true)} aria-label="Voice assistant"
-        className="no-print fixed right-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-[45] grid h-12 w-12 lg:h-14 lg:w-14 place-items-center rounded-full bg-gradient-to-br from-[var(--accent)] via-[var(--violet)] to-[var(--teal)] text-white shadow-lg shadow-[color-mix(in_srgb,var(--accent)_35%,transparent)] transition-transform hover:scale-105 active:scale-95 lg:right-6 lg:bottom-6">
+        className="no-print fixed right-3 bottom-[calc(76px+env(safe-area-inset-bottom))] z-[45] grid h-12 w-12 lg:h-14 lg:w-14 place-items-center rounded-full bg-ink text-canvas shadow-lift transition-transform hover:scale-105 active:scale-95 lg:right-6 lg:bottom-6">
         <LuMic className="text-[20px] lg:text-[22px]" />
       </button>
     </Portal>
