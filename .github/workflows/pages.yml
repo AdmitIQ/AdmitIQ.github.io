@@ -1,16 +1,23 @@
-# Publishes the static app (local mode: no server AI) to GitHub Pages on every push to main.
+# Publishes admitiq.github.io from the AdmitIQ app repo (v71628/AdmitIQ), built so it talks to the
+# AdmitIQ server on Render for AI, sign-in and payments. Runs on every push here, on demand
+# (Actions > pages > Run workflow), and every hour so new app releases appear without a push.
 name: pages
 on:
   push: { branches: [main] }
   workflow_dispatch:
+  schedule: [{ cron: '23 * * * *' }]
 permissions: { contents: read, pages: write, id-token: write }
 concurrency: { group: pages, cancel-in-progress: true }
+env:
+  APP_REPO: v71628/AdmitIQ
+  ADMITIQ_API: https://admitiq-zvxk.onrender.com
 jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v5
+        with: { repository: '${{ env.APP_REPO }}', ref: main }
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
       - run: npm install --no-audit --no-fund
