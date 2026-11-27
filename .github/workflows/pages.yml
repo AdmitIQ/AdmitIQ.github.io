@@ -14,17 +14,24 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url }}' }
+    environment: { name: github-pages, url: '${{ steps.d.outputs.page_url || steps.d2.outputs.page_url }}' }
     steps:
       - uses: actions/checkout@v5
         with: { repository: '${{ env.APP_REPO }}', ref: main }
       - uses: actions/setup-node@v5
         with: { node-version: 22 }
-      - run: npm install --no-audit --no-fun5
+      - run: npm install --no-audit --no-fund
       - run: npm run build
       - uses: actions/configure-pages@v5
         with: { enablement: true }
       - uses: actions/upload-pages-artifact@v5
         with: { path: dist }
+      # GitHub's artifact service sometimes fails briefly; wait and try the deploy once more.
       - id: d
+        uses: actions/deploy-pages@v5
+        continue-on-error: true
+      - if: steps.d.outcome == 'failure'
+        run: sleep 60
+      - id: d2
+        if: steps.d.outcome == 'failure'
         uses: actions/deploy-pages@v5
