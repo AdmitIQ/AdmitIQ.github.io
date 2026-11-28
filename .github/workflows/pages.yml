@@ -11,6 +11,7 @@ concurrency: { group: pages, cancel-in-progress: true }
 env:
   APP_REPO: v71628/AdmitIQ
   ADMITIQ_API: https://admitiq-zvxk.onrender.com
+  ADMITIQ_GOATCOUNTER: admitiq
 jobs:
   deploy:
     runs-on: ubuntu-latest
